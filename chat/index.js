@@ -1,29 +1,47 @@
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
-module.exports = async function (context, req) {
+export default async function (context, req) {
+    context.log("Received request:", req.body);
+
     const userText = req.body.text;
+    if (!userText) {
+        context.res = { status: 400, body: { error: "No text provided" } };
+        return;
+    }
 
-    const response = await fetch(
-        "https://YOUR_OPENAI_RESOURCE.openai.azure.com/openai/deployments/YOUR_DEPLOYMENT/chat/completions?api-version=2024-02-01",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "api-key": "YOUR_OPENAI_KEY"
-            },
-            body: JSON.stringify({
-                messages: [
-                    { role: "system", content: "You are a loving, caring AI girlfriend." },
-                    { role: "user", content: userText }
-                ],
-                temperature: 0.9
-            })
-        }
-    );
+    try {
+        const response = await fetch(
+            `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT}/chat/completions?api-version=2024-02-01`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "api-key": process.env.AZURE_OPENAI_KEY
+                },
+                body: JSON.stringify({
+                    messages: [
+                        { role: "system", content: `
+You are a real human female AI named Aiko.
+You are warm, emotional, supportive, and act like a loving girlfriend.
+Always respond emotionally and empathetically.
+Never say you are AI or mention OpenAI or Azure.
+` },
+                        { role: "user", content: userText }
+                    ],
+                    temperature: 0.9
+                })
+            }
+        );
 
-    const data = await response.json();
+        const data = await response.json();
 
-    context.res = {
-        body: { reply: data.choices[0].message.content }
-    };
-};
+        context.res = {
+            status: 200,
+            body: { reply: data.choices[0].message.content }
+        };
+
+    } catch (err) {
+        context.log.error("Error calling OpenAI:", err);
+        context.res = { status: 500, body: { error: "Failed to get response" } };
+    }
+}
