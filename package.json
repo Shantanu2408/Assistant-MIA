@@ -1,0 +1,10 @@
+{
+  "name": "azure-openai-function",
+  "version": "1.0.0",
+  "description": "Azure Function for OpenAI",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.7.0"
+  }
+}
